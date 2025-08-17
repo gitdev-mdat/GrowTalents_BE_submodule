@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  mysql-db:
+    image: mysql:8
+    container_name: growtalents_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: growtalents
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  growtalents-be:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: growtalents_be
+    ports:
+      - "8081:8080"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/growtalents?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+
+volumes:
+  mysql_data:
